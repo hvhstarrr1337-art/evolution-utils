@@ -3768,6 +3768,11 @@ function sections:keybind(props)
 	local def = props.def or props.Def or props.default or props.Default or nil
 	local callback = props.callback or props.callBack or props.CallBack or props.Callback or function()end
 	local allowed = props.allowed or props.Allowed or 1
+	local mode = props.mode or props.Mode or props.defaultmode or props.Defaultmode or props.DefaultMode or "hotkey"
+	mode = utility.removespaces(tostring(mode):lower())
+	if mode ~= "hotkey" and mode ~= "toggle" and mode ~= "always" then
+		mode = "hotkey"
+	end
 	--
 	local default = ".."
 	local typeis = nil
@@ -3914,30 +3919,89 @@ function sections:keybind(props)
 		["value"] = value,
 		["allowed"] = allowed,
 		["current"] = {typeis,utility.splitenum(def)},
-		["pressed"] = false,
+		["mode"] = mode,
+		["state"] = (mode == "always"),
+		["open"] = false,
 		["callback"] = callback
 	}
+	-- // mode popup
+	local modenames = {"on hotkey","on toggle","always on"}
+	local modeids = {"hotkey","toggle","always"}
 	--
-	button.MouseButton1Down:Connect(function()
-		if keybind.down == false then
-			outline.BorderColor3 = self.library.theme.accent
-			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
-			wait()
-			keybind.down = true
-		end
-	end)
+	local modeholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(1,0),
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,90,0,48),
+			Position = UDim2.new(1,0,1,4),
+			Visible = false,
+			ZIndex = 7,
+			Parent = keybindholder
+		}
+	)
 	--
-	button.MouseButton2Down:Connect(function()
-		keybind.down = false
-		keybind.current = {nil,nil}
-		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
-		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
-		if find then
-			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Parent = modeholder
+		}
+	)
+	--
+	local modebuttons = {}
+	--
+	for i,mname in pairs(modenames) do
+		local mbtn = utility.new(
+			"TextButton",
+			{
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,16),
+				Font = self.library.font,
+				Text = mname,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				ZIndex = 8,
+				Parent = modeholder
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = mbtn
+		--
+		modebuttons[modeids[i]] = mbtn
+	end
+	--
+	local function refreshmodes()
+		for id,btn in pairs(modebuttons) do
+			if id == keybind.mode then
+				btn.TextColor3 = self.library.theme.accent
+			else
+				btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			end
 		end
-		value.Text = ".."
-		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
-	end)
+	end
+	--
+	refreshmodes()
+	--
+	for id,btn in pairs(modebuttons) do
+		btn.MouseButton1Down:Connect(function()
+			keybind.mode = id
+			keybind.open = false
+			modeholder.Visible = false
+			refreshmodes()
+			if id == "always" then
+				keybind.state = true
+				keybind.callback(true)
+			else
+				keybind.state = false
+				keybind.callback(false)
+			end
+		end)
+	end
 	--
 	local function turn(typeis,current)
 		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
@@ -3950,35 +4014,104 @@ function sections:keybind(props)
 		end
 	end
 	--
-	uis.InputBegan:Connect(function(Input)
+	local function unbind()
+		keybind.down = false
+		keybind.current = {nil,nil}
+		keybind.state = false
+		outline.BorderColor3 = Color3.fromRGB(12, 12, 12)
+		local find = table.find(self.library.themeitems["accent"]["BorderColor3"],outline)
+		if find then
+			table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
+		end
+		value.Text = ".."
+		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+		keybind.callback(false)
+	end
+	--
+	local function kmatch(Input)
+		if keybind.current[1] == "KeyCode" then
+			return Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == keybind.current[2]
+		elseif keybind.current[1] == "UserInputType" then
+			return Input.UserInputType.Name == keybind.current[2]
+		end
+		return false
+	end
+	--
+	button.MouseButton1Down:Connect(function()
+		if keybind.down == false then
+			keybind.open = false
+			modeholder.Visible = false
+			outline.BorderColor3 = self.library.theme.accent
+			table.insert(self.library.themeitems["accent"]["BorderColor3"],outline)
+			wait()
+			keybind.down = true
+		end
+	end)
+	--
+	button.MouseButton2Down:Connect(function()
+		if keybind.down == false then
+			keybind.open = not keybind.open
+			modeholder.Visible = keybind.open
+		end
+	end)
+	--
+	uis.InputBegan:Connect(function(Input,gpe)
 		if keybind.down then
 			if Input.UserInputType == Enum.UserInputType.Keyboard then
-				local capd = utility.capatalize(Input.KeyCode.Name)
-				if #capd > 1 then
-					value.Text = capd
+				if Input.KeyCode == Enum.KeyCode.Escape then
+					unbind()
 				else
-					value.Text = Input.KeyCode.Name
+					local capd = utility.capatalize(Input.KeyCode.Name)
+					if #capd > 1 then
+						value.Text = capd
+					else
+						value.Text = Input.KeyCode.Name
+					end
+					turn("KeyCode",Input.KeyCode)
+					keybind.callback(Input.KeyCode)
 				end
-				turn("KeyCode",Input.KeyCode)
-				callback(Input.KeyCode)
-			end
-			if allowed == 1 then
+			elseif allowed == 1 then
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 then
 					value.Text = "MB1"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType",Enum.UserInputType.MouseButton1)
+					keybind.callback(Enum.UserInputType.MouseButton1)
 				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
 					value.Text = "MB2"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType",Enum.UserInputType.MouseButton2)
+					keybind.callback(Enum.UserInputType.MouseButton2)
 				elseif Input.UserInputType == Enum.UserInputType.MouseButton3 then
 					value.Text = "MB3"
-					turn("UserInputType",Input)
-					callback(Input)
+					turn("UserInputType",Enum.UserInputType.MouseButton3)
+					keybind.callback(Enum.UserInputType.MouseButton3)
+				end
+			end
+		else
+			if gpe then return end
+			if keybind.mode == "always" then return end
+			if keybind.current[1] and kmatch(Input) then
+				if keybind.mode == "hotkey" then
+					keybind.state = true
+					keybind.callback(true)
+				elseif keybind.mode == "toggle" then
+					keybind.state = not keybind.state
+					keybind.callback(keybind.state)
 				end
 			end
 		end
 	end)
+	--
+	uis.InputEnded:Connect(function(Input)
+		if keybind.down == false and keybind.mode == "hotkey" and keybind.current[1] then
+			if kmatch(Input) and keybind.state then
+				keybind.state = false
+				keybind.callback(false)
+			end
+		end
+	end)
+	--
+	if keybind.mode == "always" then
+		keybind.callback(true)
+	end
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
 	--
