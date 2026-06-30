@@ -17,6 +17,41 @@ local configloaders = {}
 local watermarks = {}
 local loaders = {}
 --
+local customfonts = {}
+--
+do
+	local fontbase = "https://raw.githubusercontent.com/hvhstarrr1337-art/evolution-utils/main/"
+	local fontlist = {
+		["Proggy Clean"] = "ProggyClean",
+		["Tahoma"] = "Tahoma"
+	}
+	pcall(function()
+		if not isfolder("evolution-utils") then
+			makefolder("evolution-utils")
+		end
+		for name,file in pairs(fontlist) do
+			local ttf = "evolution-utils/"..file..".ttf"
+			if not isfile(ttf) then
+				writefile(ttf, game:HttpGet(fontbase..file..".ttf"))
+			end
+			local json = "evolution-utils/"..file..".json"
+			writefile(json, game:GetService("HttpService"):JSONEncode({
+				name = name,
+				faces = {
+					{
+						name = "Regular",
+						weight = 400,
+						style = "normal",
+						assetId = getcustomasset(ttf)
+					}
+				}
+			}))
+			local key = name:lower():gsub(" ","")
+			customfonts[key] = Font.new(getcustomasset(json))
+		end
+	end)
+end
+--
 local utility = {}
 --
 local check_exploit = (syn and "Synapse") or (KRNL_LOADED and "Krnl") or (isourclosure and "ScriptWare") or nil
@@ -255,7 +290,7 @@ function library:new(props)
 			Size = UDim2.new(1,-10,1,0),
 			Position = UDim2.new(0.5,0,0,0),
 			Font = font,
-			Text = name,
+			Text = "",
 			TextColor3 = Color3.fromRGB(255,255,255),
 			TextXAlignment = "Left",
 			TextSize = textsize,
@@ -403,6 +438,7 @@ function library:new(props)
 		["key"] = Enum.KeyCode.RightShift,
 		["textsize"] = textsize,
 		["font"] = font,
+		["name"] = name,
 		["theme"] = {
 			["accent"] = color
 		},
@@ -417,6 +453,103 @@ function library:new(props)
 	--
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],tabsoutline)
+	-- // watermark
+	local wmoutline = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundColor3 = color,
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(0,260,0,26),
+			Position = UDim2.new(0,10,0,10),
+			ZIndex = 9900,
+			Parent = screen
+		}
+	)
+	--
+	table.insert(window.themeitems["accent"]["BackgroundColor3"],wmoutline)
+	--
+	local wmoutline2 = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-4,1,-4),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9901,
+			Parent = wmoutline
+		}
+	)
+	--
+	local wmindent = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			ZIndex = 9902,
+			Parent = wmoutline2
+		}
+	)
+	--
+	local wmtitle = utility.new(
+		"TextLabel",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-10,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Font = font,
+			Text = name,
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = textsize,
+			TextStrokeTransparency = 0,
+			ZIndex = 9903,
+			Parent = wmindent
+		}
+	)
+	--
+	wmtitle:GetPropertyChangedSignal("TextBounds"):Connect(function()
+		wmoutline.Size = UDim2.new(0,wmtitle.TextBounds.X+20,0,26)
+	end)
+	--
+	window.watermark = wmoutline
+	window.watermarktitle = wmtitle
+	window.labels[#window.labels+1] = wmtitle
+	--
+	local placename = "Unknown"
+	coroutine.wrap(function()
+		local ok,info = pcall(function()
+			return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+		end)
+		if ok and info and info.Name then
+			placename = info.Name
+		end
+	end)()
+	--
+	local frames = 0
+	local lastsecond = tick()
+	local fps = 60
+	--
+	window.watermarkconnection = rs.RenderStepped:Connect(function()
+		frames = frames + 1
+		if tick() - lastsecond >= 1 then
+			fps = frames
+			frames = 0
+			lastsecond = tick()
+			local ping = 0
+			pcall(function()
+				ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+			end)
+			wmtitle.Text = window.name.."  |  "..fps.." fps  |  "..ping.." ms  |  "..placename.."  |  "..os.date("%H:%M:%S")
+		end
+	end)
 	--
 	local toggled = true
 	local cooldown = false
@@ -471,6 +604,30 @@ function library:new(props)
 		ts:Create(frame, TweenInfo.new(0.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = pos, Rotation = 0}):Play()
 	end
 	--
+	local fadeid = 0
+	--
+	local fade = function(target)
+		fadeid = fadeid + 1
+		local id = fadeid
+		local start = root.GroupTransparency
+		local dur = 0.35
+		local elapsed = 0
+		coroutine.wrap(function()
+			while elapsed < dur and id == fadeid do
+				elapsed = elapsed + rs.RenderStepped:Wait()
+				local a = elapsed / dur
+				if a > 1 then a = 1 end
+				root.GroupTransparency = start + (target - start) * a
+			end
+			if id == fadeid then
+				root.GroupTransparency = target
+				if target >= 1 and toggled == false then
+					root.Visible = false
+				end
+			end
+		end)()
+	end
+	--
 	window.toggleconnection = uis.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.Keyboard then
 			if Input.KeyCode == window.key then
@@ -483,13 +640,7 @@ function library:new(props)
 						if window.animation == "instant" then
 							screen.Enabled = false
 						elseif window.animation == "fading" then
-							local t = ts:Create(root, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {GroupTransparency = 1})
-							t:Play()
-							t.Completed:Connect(function()
-								if not toggled then
-									root.Visible = false
-								end
-							end)
+							fade(1)
 						else
 							root.GroupTransparency = 0
 							doclose(outline, outlinescale, saved)
@@ -516,7 +667,7 @@ function library:new(props)
 							tabsoutline.Rotation = 0
 							tabscaler.Scale = 1
 							root.GroupTransparency = 1
-							ts:Create(root, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
+							fade(0)
 						else
 							root.GroupTransparency = 0
 							doopen(outline, outlinescale, saved)
@@ -990,6 +1141,27 @@ function library:setanimation(name)
 	end
 end
 --
+function library:setwatermark(bool)
+	if self.watermark then
+		self.watermark.Visible = bool
+	end
+end
+--
+function library:setwatermarkside(side)
+	if not self.watermark then return end
+	side = utility.removespaces(tostring(side):lower())
+	local sides = {
+		topright = {Vector2.new(1,0), UDim2.new(1,-10,0,10)},
+		topleft = {Vector2.new(0,0), UDim2.new(0,10,0,10)},
+		bottomright = {Vector2.new(1,1), UDim2.new(1,-10,1,-10)},
+		bottomleft = {Vector2.new(0,1), UDim2.new(0,10,1,-10)}
+	}
+	if sides[side] then
+		self.watermark.AnchorPoint = sides[side][1]
+		self.watermark.Position = sides[side][2]
+	end
+end
+--
 function library:unload()
 	local window = self
 	--
@@ -997,6 +1169,10 @@ function library:unload()
 	--
 	if window.toggleconnection then
 		window.toggleconnection:Disconnect()
+	end
+	--
+	if window.watermarkconnection then
+		window.watermarkconnection:Disconnect()
 	end
 	--
 	if window.screen then
@@ -1027,12 +1203,15 @@ function library:configtab(props)
 		self:settheme("accent", color)
 	end})
 	-- // menu
-	local menu = page:section({name = "Menu", side = "right", size = 190})
+	local menu = page:section({name = "Menu", side = "right", size = 210})
 	menu:dropdown({name = "Animation", options = {"slide", "left", "right", "top", "bottom", "scale", "spin", "fading", "instant"}, def = self.animation, callback = function(option)
 		self:setanimation(option)
 	end})
-	menu:dropdown({name = "Font", options = {"RobotoMono", "Gotham", "SourceSans", "Code", "Ubuntu"}, def = self.font, callback = function(option)
+	menu:dropdown({name = "Font", options = {"Gotham", "SourceSans", "Ubuntu", "Proggy Clean", "Tahoma"}, def = self.font, callback = function(option)
 		self:setfont(option)
+	end})
+	menu:toggle({name = "Watermark", def = true, callback = function(state)
+		self:setwatermark(state)
 	end})
 	menu:keybind({name = "Menu Key", def = self.key, callback = function(key)
 		if typeof(key) == "EnumItem" then
@@ -1049,13 +1228,30 @@ end
 function library:setfont(font)
 	if font ~= nil then
 		local window = self
-		window.font = font
-		for i,v in pairs(window.labels) do
-			if v ~= nil then
-				v.Font = font
+		local key = utility.removespaces(tostring(font):lower())
+		local face = customfonts[key]
+		if face then
+			local fontobj = (typeof(face) == "Font") and face or Font.new(face)
+			for i,v in pairs(window.labels) do
+				if v ~= nil then
+					v.FontFace = fontobj
+				end
+			end
+		else
+			if pcall(function() return Enum.Font[font] end) then
+				window.font = font
+				for i,v in pairs(window.labels) do
+					if v ~= nil then
+						v.Font = font
+					end
+				end
 			end
 		end
 	end
+end
+--
+function library.addfont(name,font)
+	customfonts[utility.removespaces(tostring(name):lower())] = font
 end
 --
 function library:settextsize(size)
