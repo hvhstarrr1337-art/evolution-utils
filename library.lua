@@ -3933,7 +3933,7 @@ function sections:keybind(props)
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(0,90,0,54),
+			Size = UDim2.new(0,90,0,56),
 			Position = UDim2.new(1,0,1,4),
 			Visible = false,
 			ZIndex = 7,
