@@ -88,7 +88,16 @@ utility.new = function(instance,properties)
 	local ins = Instance.new(instance)
 	-- // properties setting
 	for property,value in pairs(properties) do
-		ins[property] = value
+		if property == "Font" and type(value) == "string" then
+			local key = value:lower():gsub(" ","")
+			if customfonts[key] then
+				ins.FontFace = (typeof(customfonts[key]) == "Font") and customfonts[key] or Font.new(customfonts[key])
+			else
+				pcall(function() ins.Font = value end)
+			end
+		else
+			ins[property] = value
+		end
 	end
 	-- // return
 	return ins
@@ -169,7 +178,7 @@ end
 function library:new(props)
 	-- // properties
 	local textsize = props.textsize or props.TextSize or props.textSize or props.Textsize or 12
-	local font = props.font or props.Font or "RobotoMono"
+	local font = props.font or props.Font or "Tahoma"
 	local name = props.name or props.Name or props.UiName or props.Uiname or props.uiName or props.username or props.Username or props.UserName or props.userName or "new ui"
 	local color = props.color or props.Color or props.mainColor or props.maincolor or props.MainColor or props.Maincolor or props.Accent or props.accent or Color3.fromRGB(225, 58, 81)
 	local unload = props.unload or props.Unload or props.unloadcallback or props.Unloadcallback or props.UnloadCallback or props.unloadCallback or function()end
@@ -190,15 +199,14 @@ function library:new(props)
         if (check_exploit == "Synapse" and syn.request) then
 	syn.protect_gui(screen)
         end
-	-- // root canvasgroup (for fade animation)
+	-- // root container (for fade animation)
 	local root = utility.new(
-		"CanvasGroup",
+		"Frame",
 		{
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Size = UDim2.new(1,0,1,0),
 			Position = UDim2.new(0,0,0,0),
-			GroupTransparency = 0,
 			Parent = screen
 		}
 	)
@@ -657,22 +665,55 @@ function library:new(props)
 	end
 	--
 	local fadeid = 0
+	local fadealpha = 0
+	local fadeitems = {}
+	--
+	local function collectfade()
+		fadeitems = {}
+		for i,d in pairs(root:GetDescendants()) do
+			if d:IsA("GuiObject") then
+				table.insert(fadeitems,{d,"BackgroundTransparency",d.BackgroundTransparency})
+			end
+			if d:IsA("TextLabel") or d:IsA("TextButton") or d:IsA("TextBox") then
+				table.insert(fadeitems,{d,"TextTransparency",d.TextTransparency})
+				table.insert(fadeitems,{d,"TextStrokeTransparency",d.TextStrokeTransparency})
+			end
+			if d:IsA("ImageLabel") or d:IsA("ImageButton") then
+				table.insert(fadeitems,{d,"ImageTransparency",d.ImageTransparency})
+			end
+			if d:IsA("ScrollingFrame") then
+				table.insert(fadeitems,{d,"ScrollBarImageTransparency",d.ScrollBarImageTransparency})
+			end
+		end
+	end
+	--
+	local function applyfade(a)
+		fadealpha = a
+		for i,it in pairs(fadeitems) do
+			if it[1].Parent then
+				it[1][it[2]] = it[3] + (1 - it[3]) * a
+			end
+		end
+	end
 	--
 	local fade = function(target)
+		if next(fadeitems) == nil then
+			collectfade()
+		end
 		fadeid = fadeid + 1
 		local id = fadeid
-		local start = root.GroupTransparency
-		local dur = 0.35
+		local start = fadealpha
+		local dur = 0.3
 		local elapsed = 0
 		coroutine.wrap(function()
 			while elapsed < dur and id == fadeid do
 				elapsed = elapsed + rs.RenderStepped:Wait()
 				local a = elapsed / dur
 				if a > 1 then a = 1 end
-				root.GroupTransparency = start + (target - start) * a
+				applyfade(start + (target - start) * a)
 			end
 			if id == fadeid then
-				root.GroupTransparency = target
+				applyfade(target)
 				if target >= 1 and toggled == false then
 					root.Visible = false
 				end
@@ -694,7 +735,7 @@ function library:new(props)
 						elseif window.animation == "fading" then
 							fade(1)
 						else
-							root.GroupTransparency = 0
+							applyfade(0)
 							doclose(outline, outlinescale, saved)
 							doclose(tabsoutline, tabscaler, savedtab)
 						end
@@ -704,7 +745,7 @@ function library:new(props)
 						screen.Enabled = true
 						root.Visible = true
 						if window.animation == "instant" then
-							root.GroupTransparency = 0
+							applyfade(0)
 							outline.Position = saved
 							outline.Rotation = 0
 							outlinescale.Scale = 1
@@ -718,10 +759,13 @@ function library:new(props)
 							tabsoutline.Position = savedtab
 							tabsoutline.Rotation = 0
 							tabscaler.Scale = 1
-							root.GroupTransparency = 1
+							if next(fadeitems) == nil then
+								collectfade()
+							end
+							applyfade(1)
 							fade(0)
 						else
-							root.GroupTransparency = 0
+							applyfade(0)
 							doopen(outline, outlinescale, saved)
 							doopen(tabsoutline, tabscaler, savedtab)
 						end
@@ -1312,6 +1356,7 @@ function library:setfont(font)
 		local face = customfonts[key]
 		if face then
 			local fontobj = (typeof(face) == "Font") and face or Font.new(face)
+			window.font = font
 			for i,v in pairs(window.labels) do
 				if v ~= nil then
 					v.FontFace = fontobj
@@ -2488,11 +2533,21 @@ function sections:button(props)
 	end)
 	--
 	buttonpress.MouseEnter:Connect(function()
-		ts:Create(color, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(45, 45, 45)}):Play()
+		local b = self.library.theme.background
+		ts:Create(color, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(
+			math.clamp(math.floor(b.R*255+0.5)+25,0,255),
+			math.clamp(math.floor(b.G*255+0.5)+25,0,255),
+			math.clamp(math.floor(b.B*255+0.5)+25,0,255)
+		)}):Play()
 	end)
 	--
 	buttonpress.MouseLeave:Connect(function()
-		ts:Create(color, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
+		local b = self.library.theme.background
+		ts:Create(color, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(
+			math.clamp(math.floor(b.R*255+0.5)+10,0,255),
+			math.clamp(math.floor(b.G*255+0.5)+10,0,255),
+			math.clamp(math.floor(b.B*255+0.5)+10,0,255)
+		)}):Play()
 	end)
 	-- // button tbl
 	button = {
