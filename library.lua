@@ -155,6 +155,18 @@ function library:new(props)
         if (check_exploit == "Synapse" and syn.request) then
 	syn.protect_gui(screen)
         end
+	-- // root canvasgroup (for fade animation)
+	local root = utility.new(
+		"CanvasGroup",
+		{
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			GroupTransparency = 0,
+			Parent = screen
+		}
+	)
 	-- 1
 	local outline = utility.new(
 		"Frame",
@@ -165,7 +177,7 @@ function library:new(props)
 			BorderSizePixel = 1,
 			Size = UDim2.new(0,500,0,606),
 			Position = UDim2.new(0.5,0,0.5,0),
-			Parent = screen
+			Parent = root
 		}
 	)
 	-- 2
@@ -311,7 +323,7 @@ function library:new(props)
 			Size = UDim2.new(0,40,0,36),
 			Position = UDim2.new(0.5,0,0,40),
 			ZIndex = 10,
-			Parent = screen
+			Parent = root
 		}
 	)
 	--
@@ -470,7 +482,16 @@ function library:new(props)
 						savedtab = tabsoutline.Position
 						if window.animation == "instant" then
 							screen.Enabled = false
+						elseif window.animation == "fading" then
+							local t = ts:Create(root, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {GroupTransparency = 1})
+							t:Play()
+							t.Completed:Connect(function()
+								if not toggled then
+									root.Visible = false
+								end
+							end)
 						else
+							root.GroupTransparency = 0
 							doclose(outline, outlinescale, saved)
 							doclose(tabsoutline, tabscaler, savedtab)
 						end
@@ -478,14 +499,26 @@ function library:new(props)
 					else
 						toggled = true
 						screen.Enabled = true
+						root.Visible = true
 						if window.animation == "instant" then
+							root.GroupTransparency = 0
 							outline.Position = saved
 							outline.Rotation = 0
 							outlinescale.Scale = 1
 							tabsoutline.Position = savedtab
 							tabsoutline.Rotation = 0
 							tabscaler.Scale = 1
+						elseif window.animation == "fading" then
+							outline.Position = saved
+							outline.Rotation = 0
+							outlinescale.Scale = 1
+							tabsoutline.Position = savedtab
+							tabsoutline.Rotation = 0
+							tabscaler.Scale = 1
+							root.GroupTransparency = 1
+							ts:Create(root, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
 						else
+							root.GroupTransparency = 0
 							doopen(outline, outlinescale, saved)
 							doopen(tabsoutline, tabscaler, savedtab)
 						end
@@ -948,6 +981,7 @@ function library:setanimation(name)
 		["bottom"] = true,
 		["scale"] = true,
 		["spin"] = true,
+		["fading"] = true,
 		["instant"] = true
 	}
 	name = utility.removespaces(tostring(name):lower())
@@ -994,7 +1028,7 @@ function library:configtab(props)
 	end})
 	-- // menu
 	local menu = page:section({name = "Menu", side = "right", size = 190})
-	menu:dropdown({name = "Animation", options = {"slide", "left", "right", "top", "bottom", "scale", "spin", "instant"}, def = self.animation, callback = function(option)
+	menu:dropdown({name = "Animation", options = {"slide", "left", "right", "top", "bottom", "scale", "spin", "fading", "instant"}, def = self.animation, callback = function(option)
 		self:setanimation(option)
 	end})
 	menu:dropdown({name = "Font", options = {"RobotoMono", "Gotham", "SourceSans", "Code", "Ubuntu"}, def = self.font, callback = function(option)
@@ -2213,7 +2247,7 @@ function sections:slider(props)
 		"Frame",
 		{
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,0,0,31),
+			Size = UDim2.new(1,0,0,33),
 			Parent = self.content
 		}
 	)
@@ -2225,7 +2259,7 @@ function sections:slider(props)
 			BorderColor3 = Color3.fromRGB(12, 12, 12),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,0,14),
+			Size = UDim2.new(1,0,0,16),
 			Position = UDim2.new(0,0,0,15),
 			Parent = sliderholder
 		}
@@ -2793,6 +2827,9 @@ function sections:dropdown(props)
 			end
 			dropdown.current = v
 			dropdown.value.Text = v
+			dropdown.value.TextTransparency = 1
+			dropdown.value.TextStrokeTransparency = 1
+			ts:Create(dropdown.value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
 			ddoptiontitle.TextColor3 = self.library.theme.accent
 			table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
 			dropdown.callback(v)
@@ -3015,6 +3052,24 @@ function sections:buttonbox(props)
 	--
 	table.insert(buttonbox.library.buttonboxs,buttonbox)
 	--
+	local opensz = UDim2.new(1,0,size,2)
+	--
+	local function openlist()
+		optionsholder.Visible = true
+		optionsoutline.Size = UDim2.new(1,0,0,0)
+		ts:Create(optionsoutline, TweenInfo.new(0.22,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Size = opensz}):Play()
+	end
+	--
+	local function closelist()
+		local t = ts:Create(optionsoutline, TweenInfo.new(0.18,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Size = UDim2.new(1,0,0,0)})
+		t:Play()
+		t.Completed:Connect(function()
+			if not buttonbox.open then
+				optionsholder.Visible = false
+			end
+		end)
+	end
+	--
 	for i,v in pairs(options) do
 		local bboptionbutton = utility.new(
 			"TextButton",
@@ -3082,12 +3137,13 @@ function sections:buttonbox(props)
 	--
 	buttonboxbutton.MouseButton1Down:Connect(function()
 		buttonbox.library:closewindows(buttonbox)
-		optionsholder.Visible = not buttonbox.open
 		buttonbox.open = not buttonbox.open
 		if buttonbox.open then
 			indicator.Text = "-"
+			openlist()
 		else
 			indicator.Text = "+"
+			closelist()
 		end
 	end)
 	--
@@ -3337,6 +3393,24 @@ function sections:multibox(props)
 	--
 	table.insert(multibox.library.multiboxes,multibox)
 	--
+	local opensz = UDim2.new(1,0,size,2)
+	--
+	local function openlist()
+		optionsholder.Visible = true
+		optionsoutline.Size = UDim2.new(1,0,0,0)
+		ts:Create(optionsoutline, TweenInfo.new(0.22,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Size = opensz}):Play()
+	end
+	--
+	local function closelist()
+		local t = ts:Create(optionsoutline, TweenInfo.new(0.18,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Size = UDim2.new(1,0,0,0)})
+		t:Play()
+		t.Completed:Connect(function()
+			if not multibox.open then
+				optionsholder.Visible = false
+			end
+		end)
+	end
+	--
 	for i,v in pairs(options) do
 		local ddoptionbutton = utility.new(
 			"TextButton",
@@ -3414,6 +3488,9 @@ function sections:multibox(props)
 					end
 				end
 				value.Text = str
+				value.TextTransparency = 1
+				value.TextStrokeTransparency = 1
+				ts:Create(value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
 				ddoptiontitle.TextColor3 = self.library.theme.accent
 				table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
 				multibox.callback(multibox.current)
@@ -3434,6 +3511,9 @@ function sections:multibox(props)
 					end
 				end
 				value.Text = str
+				value.TextTransparency = 1
+				value.TextStrokeTransparency = 1
+				ts:Create(value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
 				ddoptiontitle.TextColor3 = Color3.fromRGB(255,255,255)
 				multibox.callback(multibox.current)
 			end
@@ -3447,12 +3527,13 @@ function sections:multibox(props)
 				v.TextColor3 = self.library.theme.accent
 			end
 		end
-		optionsholder.Visible = not multibox.open
 		multibox.open = not multibox.open
 		if multibox.open then
 			indicator.Text = "-"
+			openlist()
 		else
 			indicator.Text = "+"
+			closelist()
 		end
 	end)
 	--
