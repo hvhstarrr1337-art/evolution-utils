@@ -385,6 +385,7 @@ function library:new(props)
 		["colorpickers"] = {},
 		["x"] = true,
 		["y"] = true,
+		["animation"] = "slide",
 		["key"] = Enum.KeyCode.RightShift,
 		["textsize"] = textsize,
 		["font"] = font,
@@ -406,57 +407,69 @@ function library:new(props)
 	local toggled = true
 	local cooldown = false
 	local binding = false
-	local saved = UDim2.new(0,0,0,0)
+	local saved = outline.Position
+	local opensize = outline.Size
+	--
+	local closeanim = function()
+		local anim = window.animation
+		if anim == "instant" then
+			screen.Enabled = false
+		elseif anim == "scale" then
+			ts:Create(outline, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)}):Play()
+		elseif anim == "spin" then
+			ts:Create(outline, TweenInfo.new(0.45,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0), Rotation = 200}):Play()
+		elseif anim == "left" then
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(-1.5,0,saved.Y.Scale,saved.Y.Offset)}):Play()
+		elseif anim == "right" then
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(1.5,0,saved.Y.Scale,saved.Y.Offset)}):Play()
+		elseif anim == "top" then
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(saved.X.Scale,saved.X.Offset,-1.5,0)}):Play()
+		elseif anim == "bottom" then
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(saved.X.Scale,saved.X.Offset,1.5,0)}):Play()
+		else
+			local xx,yy = 3,3
+			if (outline.AbsolutePosition.X+(outline.AbsoluteSize.X/2)) < (cam.ViewportSize.X/2) then
+				xx = -3
+			end
+			if (outline.AbsolutePosition.Y+(outline.AbsoluteSize.Y/2)) < (cam.ViewportSize.Y/2) then
+				yy = -3
+			end
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(xx,0,yy,0)}):Play()
+		end
+	end
+	--
+	local openanim = function()
+		local anim = window.animation
+		if anim == "instant" then
+			screen.Enabled = true
+		elseif anim == "scale" then
+			ts:Create(outline, TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Size = opensize}):Play()
+		elseif anim == "spin" then
+			ts:Create(outline, TweenInfo.new(0.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Size = opensize, Rotation = 0}):Play()
+		else
+			ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = saved}):Play()
+		end
+	end
 	--
 	uis.InputBegan:Connect(function(Input)
 		if binding then return end
 		if Input.UserInputType == Enum.UserInputType.Keyboard then
 			if Input.KeyCode == window.key then
 				if cooldown == false then
+					cooldown = true
 					if toggled then
-						cooldown = true
-						toggled = not toggled
+						toggled = false
 						saved = outline.Position
-						local xx,yy = 0,0
-						local xxx,yyy = 0,0
-						--
-						if (outline.AbsolutePosition.X+(outline.AbsoluteSize.X/2)) < (cam.ViewportSize.X/2) then
-							xx = -3
-						else
-							xx = 3
-						end
-						--
-						if window.y then
-							if (outline.AbsolutePosition.Y+(outline.AbsoluteSize.Y/2)) < (cam.ViewportSize.Y/2) then
-								yy = -3
-							else
-								yy = 3
-							end
-						else
-							yy = saved.Y.Scale
-							yyy = saved.Y.Offset
-						end
-						--
-						if window.x == false and window.y == false then
-							screen.Enabled = false
-						else
-							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In), {Position = UDim2.new(xx,xxx,yy,yyy)}):Play()
-						end
+						closeanim()
 						tabsoutline.Visible = false
 						wait(0.5)
-						cooldown = false
 					else
-						cooldown = true
-						toggled = not toggled
+						toggled = true
 						tabsoutline.Visible = true
-						if window.x == false and window.y == false then
-							screen.Enabled = true
-						else
-							ts:Create(outline, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Position = saved}):Play()
-						end
+						openanim()
 						wait(0.5)
-						cooldown = false
 					end
+					cooldown = false
 				end
 			end
 		end
@@ -996,6 +1009,59 @@ function library:settoggle(side,bool)
 	else
 		self.y = bool
 	end
+end
+--
+function library:setanimation(name)
+	local anims = {
+		["slide"] = true,
+		["left"] = true,
+		["right"] = true,
+		["top"] = true,
+		["bottom"] = true,
+		["scale"] = true,
+		["spin"] = true,
+		["instant"] = true
+	}
+	name = utility.removespaces(tostring(name):lower())
+	if anims[name] then
+		self.animation = name
+	end
+end
+--
+function library:configtab(props)
+	local props = props or {}
+	local name = props.name or props.Name or "Configs"
+	local icon = props.icon or props.Icon or props.image or props.Image or nil
+	local folder = props.folder or props.Folder or "evolution_configs"
+	--
+	if not isfolder(folder) then
+		makefolder(folder)
+	end
+	if folder:sub(-1) ~= "/" then
+		folder = folder.."/"
+	end
+	-- // page
+	local page = self:page({name = name, icon = icon})
+	-- // configs
+	local configs = page:section({name = "Configs", side = "left", size = 250})
+	configs:configloader({folder = folder})
+	-- // theme
+	local theme = page:section({name = "Theme", side = "right", size = 60})
+	theme:colorpicker({name = "Accent Color", def = self.theme.accent, callback = function(color)
+		self:settheme("accent", color)
+	end})
+	-- // menu
+	local menu = page:section({name = "Menu", side = "right", size = 130})
+	menu:dropdown({name = "Animation", options = {"slide", "left", "right", "top", "bottom", "scale", "spin", "instant"}, def = self.animation, callback = function(option)
+		self:setanimation(option)
+	end})
+	menu:keybind({name = "Menu Key", def = self.key, callback = function(key)
+		if typeof(key) == "EnumItem" then
+			self:setkey(key)
+		end
+	end})
+	--
+	return page
 end
 --
 function library:setfont(font)
