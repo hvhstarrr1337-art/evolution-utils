@@ -1376,7 +1376,7 @@ function pages:subtab(props)
 		{
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0,0,0,0),
+			Position = UDim2.new(0,0,0,-2),
 			Font = self.library.font,
 			Text = name,
 			TextColor3 = Color3.fromRGB(255,255,255),
