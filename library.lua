@@ -251,7 +251,7 @@ function library:new(props)
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(1,-10,1,-25),
+			Size = UDim2.new(1,-10,1,-10),
 			Position = UDim2.new(0.5,0,1,-5),
 			Parent = outline2
 		}
@@ -290,7 +290,7 @@ function library:new(props)
 			Size = UDim2.new(1,-10,1,0),
 			Position = UDim2.new(0.5,0,0,0),
 			Font = font,
-			Text = name,
+			Text = "",
 			TextColor3 = Color3.fromRGB(255,255,255),
 			TextXAlignment = "Left",
 			TextSize = textsize,
@@ -527,7 +527,7 @@ function library:new(props)
 				AnchorPoint = Vector2.new(0.5,0),
 				BackgroundColor3 = color,
 				BorderSizePixel = 0,
-				Size = UDim2.new(0.85,0,0,1),
+				Size = UDim2.new(1,-8,0,1),
 				Position = UDim2.new(0.5,0,0,3),
 				ZIndex = 9903,
 				Parent = indent
@@ -566,36 +566,38 @@ function library:new(props)
 		return label
 	end
 	--
-	local wmstats = wmsegment(name)
+	local wmname = wmsegment(name)
+	local wmfps = wmsegment("0 fps")
+	local wmping = wmsegment("0 ms")
+	local wmtime = wmsegment(os.date("%H:%M:%S"))
 	local wmplace = wmsegment("Place")
 	local wmuser = wmsegment(plr.Name)
 	--
-	local placename = "Unknown"
 	coroutine.wrap(function()
 		local ok,info = pcall(function()
 			return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
 		end)
 		if ok and info and info.Name then
-			placename = info.Name
-			wmplace.Text = placename
+			wmplace.Text = info.Name
 		end
 	end)()
 	--
 	local frames = 0
 	local lastsecond = tick()
-	local fps = 60
 	--
 	window.watermarkconnection = rs.RenderStepped:Connect(function()
 		frames = frames + 1
 		if tick() - lastsecond >= 1 then
-			fps = frames
+			local fps = frames
 			frames = 0
 			lastsecond = tick()
 			local ping = 0
 			pcall(function()
 				ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
 			end)
-			wmstats.Text = window.name.."  |  "..fps.." fps  |  "..ping.." ms  |  "..os.date("%H:%M:%S")
+			wmfps.Text = fps.." fps"
+			wmping.Text = ping.." ms"
+			wmtime.Text = os.date("%H:%M:%S")
 		end
 	end)
 	--
