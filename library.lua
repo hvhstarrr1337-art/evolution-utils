@@ -4133,6 +4133,10 @@ function sections:keybind(props)
 	--
 	outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
 	--
+	value:GetPropertyChangedSignal("TextBounds"):Connect(function()
+		outline.Size = UDim2.new(0,value.TextBounds.X+20,1,0)
+	end)
+	--
 	local color = utility.new(
 		"Frame",
 		{
@@ -4221,15 +4225,7 @@ function sections:keybind(props)
 		"UIListLayout",
 		{
 			FillDirection = "Vertical",
-			Parent = modeholder
-		}
-	)
-	--
-	utility.new(
-		"UIPadding",
-		{
-			PaddingTop = UDim.new(0,3),
-			PaddingBottom = UDim.new(0,3),
+			VerticalAlignment = "Center",
 			Parent = modeholder
 		}
 	)
