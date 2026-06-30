@@ -1051,9 +1051,12 @@ function library:configtab(props)
 		self:settheme("accent", color)
 	end})
 	-- // menu
-	local menu = page:section({name = "Menu", side = "right", size = 130})
+	local menu = page:section({name = "Menu", side = "right", size = 165})
 	menu:dropdown({name = "Animation", options = {"slide", "left", "right", "top", "bottom", "scale", "spin", "instant"}, def = self.animation, callback = function(option)
 		self:setanimation(option)
+	end})
+	menu:dropdown({name = "Font", options = {"RobotoMono", "Gotham", "GothamBold", "SourceSans", "SourceSansBold", "Code", "Arial", "Ubuntu", "Highway", "Legacy"}, def = self.font, callback = function(option)
+		self:setfont(option)
 	end})
 	menu:keybind({name = "Menu Key", def = self.key, callback = function(key)
 		if typeof(key) == "EnumItem" then
@@ -1067,6 +1070,7 @@ end
 function library:setfont(font)
 	if font ~= nil then
 		local window = self
+		window.font = font
 		for i,v in pairs(window.labels) do
 			if v ~= nil then
 				v.Font = font
