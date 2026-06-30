@@ -290,7 +290,7 @@ function library:new(props)
 			Size = UDim2.new(1,-10,1,0),
 			Position = UDim2.new(0.5,0,0,0),
 			Font = font,
-			Text = "",
+			Text = name,
 			TextColor3 = Color3.fromRGB(255,255,255),
 			TextXAlignment = "Left",
 			TextSize = textsize,
@@ -454,74 +454,121 @@ function library:new(props)
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],outline)
 	table.insert(window.themeitems["accent"]["BackgroundColor3"],tabsoutline)
 	-- // watermark
-	local wmoutline = utility.new(
+	local wmholder = utility.new(
 		"Frame",
 		{
 			AnchorPoint = Vector2.new(0,0),
-			BackgroundColor3 = color,
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
-			BorderSizePixel = 1,
-			Size = UDim2.new(0,260,0,26),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			AutomaticSize = "X",
+			Size = UDim2.new(0,0,0,26),
 			Position = UDim2.new(0,10,0,10),
 			ZIndex = 9900,
 			Parent = screen
 		}
 	)
 	--
-	table.insert(window.themeitems["accent"]["BackgroundColor3"],wmoutline)
-	--
-	local wmoutline2 = utility.new(
-		"Frame",
+	utility.new(
+		"UIListLayout",
 		{
-			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BorderColor3 = Color3.fromRGB(12, 12, 12),
-			BorderSizePixel = 1,
-			Size = UDim2.new(1,-4,1,-4),
-			Position = UDim2.new(0.5,0,0.5,0),
-			ZIndex = 9901,
-			Parent = wmoutline
+			FillDirection = "Horizontal",
+			VerticalAlignment = "Center",
+			Padding = UDim.new(0,6),
+			Parent = wmholder
 		}
 	)
 	--
-	local wmindent = utility.new(
-		"Frame",
-		{
-			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-			BorderColor3 = Color3.fromRGB(56, 56, 56),
-			BorderSizePixel = 1,
-			Size = UDim2.new(1,0,1,0),
-			Position = UDim2.new(0.5,0,0.5,0),
-			ZIndex = 9902,
-			Parent = wmoutline2
-		}
-	)
+	window.watermark = wmholder
 	--
-	local wmtitle = utility.new(
-		"TextLabel",
-		{
-			AnchorPoint = Vector2.new(0.5,0.5),
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-10,1,0),
-			Position = UDim2.new(0.5,0,0.5,0),
-			Font = font,
-			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
-			TextSize = textsize,
-			TextStrokeTransparency = 0,
-			ZIndex = 9903,
-			Parent = wmindent
-		}
-	)
+	local wmsegment = function(text)
+		local box = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderSizePixel = 1,
+				Size = UDim2.new(0,80,0,26),
+				ZIndex = 9900,
+				Parent = wmholder
+			}
+		)
+		--
+		local box2 = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0.5,0.5),
+				BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+				BorderColor3 = Color3.fromRGB(12, 12, 12),
+				BorderSizePixel = 1,
+				Size = UDim2.new(1,-4,1,-4),
+				Position = UDim2.new(0.5,0,0.5,0),
+				ZIndex = 9901,
+				Parent = box
+			}
+		)
+		--
+		local indent = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0.5,0.5),
+				BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderSizePixel = 1,
+				Size = UDim2.new(1,0,1,0),
+				Position = UDim2.new(0.5,0,0.5,0),
+				ZIndex = 9902,
+				Parent = box2
+			}
+		)
+		--
+		local line = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundColor3 = color,
+				BorderSizePixel = 0,
+				Size = UDim2.new(0.85,0,0,1),
+				Position = UDim2.new(0.5,0,0,3),
+				ZIndex = 9903,
+				Parent = indent
+			}
+		)
+		--
+		table.insert(window.themeitems["accent"]["BackgroundColor3"],line)
+		--
+		local label = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0.5,0.5),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-10,1,0),
+				Position = UDim2.new(0.5,0,0.5,0),
+				Font = font,
+				Text = text,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = textsize,
+				TextStrokeTransparency = 0,
+				ZIndex = 9903,
+				Parent = indent
+			}
+		)
+		--
+		label:GetPropertyChangedSignal("TextBounds"):Connect(function()
+			box.Size = UDim2.new(0,label.TextBounds.X+20,0,26)
+		end)
+		box.Size = UDim2.new(0,label.TextBounds.X+20,0,26)
+		--
+		utility.dragify(indent,wmholder)
+		utility.dragify(box,wmholder)
+		--
+		window.labels[#window.labels+1] = label
+		--
+		return label
+	end
 	--
-	wmtitle:GetPropertyChangedSignal("TextBounds"):Connect(function()
-		wmoutline.Size = UDim2.new(0,wmtitle.TextBounds.X+20,0,26)
-	end)
-	--
-	window.watermark = wmoutline
-	window.watermarktitle = wmtitle
-	window.labels[#window.labels+1] = wmtitle
+	local wmstats = wmsegment(name)
+	local wmplace = wmsegment("Place")
+	local wmuser = wmsegment(plr.Name)
 	--
 	local placename = "Unknown"
 	coroutine.wrap(function()
@@ -530,6 +577,7 @@ function library:new(props)
 		end)
 		if ok and info and info.Name then
 			placename = info.Name
+			wmplace.Text = placename
 		end
 	end)()
 	--
@@ -547,7 +595,7 @@ function library:new(props)
 			pcall(function()
 				ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
 			end)
-			wmtitle.Text = window.name.."  |  "..fps.." fps  |  "..ping.." ms  |  "..placename.."  |  "..os.date("%H:%M:%S")
+			wmstats.Text = window.name.."  |  "..fps.." fps  |  "..ping.." ms  |  "..os.date("%H:%M:%S")
 		end
 	end)
 	--
