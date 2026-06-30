@@ -2011,6 +2011,18 @@ function sections:toggle(props)
 			Parent = color
 		}
 	)
+	--
+	local hover = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			ZIndex = 2,
+			Parent = outline
+		}
+	)
 	-- // toggle tbl
 	toggle = {
 		["library"] = self.library,
@@ -2036,6 +2048,14 @@ function sections:toggle(props)
 			table.insert(self.library.themeitems["accent"]["BackgroundColor3"],toggle.color)
 			toggle.current = true
 		end
+	end)
+	--
+	button.MouseEnter:Connect(function()
+		ts:Create(hover, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 0.9}):Play()
+	end)
+	--
+	button.MouseLeave:Connect(function()
+		ts:Create(hover, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
 	end)
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
@@ -2279,6 +2299,20 @@ function sections:slider(props)
 		}
 	)
 	--
+	local hoverfill = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0,0),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(0,0,1,0),
+			Position = UDim2.new(0,0,0,0),
+			ZIndex = 1,
+			Parent = outline
+		}
+	)
+	--
 	local sliderbutton = utility.new(
 		"TextButton",
 		{
@@ -2372,6 +2406,19 @@ function sections:slider(props)
 				table.remove(self.library.themeitems["accent"]["BorderColor3"],find)
 			end
 		end
+	end)
+	--
+	sliderbutton.MouseEnter:Connect(function()
+		ts:Create(hoverfill, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 0.8}):Play()
+	end)
+	--
+	sliderbutton.MouseLeave:Connect(function()
+		ts:Create(hoverfill, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+	end)
+	--
+	sliderbutton.MouseMoved:Connect(function(x)
+		local s = math.clamp(x - slider.color.AbsolutePosition.X, 0, slider.color.AbsoluteSize.X)
+		ts:Create(hoverfill, TweenInfo.new(0.08,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {Size = UDim2.new((1 / slider.color.AbsoluteSize.X) * s, 0, 1, 0)}):Play()
 	end)
 	--
 	local pointer = props.pointer or props.Pointer or props.pointername or props.Pointername or props.PointerName or props.pointerName or nil
