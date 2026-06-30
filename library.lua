@@ -1314,8 +1314,8 @@ function pages:subtab(props)
 				AnchorPoint = Vector2.new(0.5,0),
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
-				Size = UDim2.new(1,-8,0,21),
-				Position = UDim2.new(0.5,0,0,2),
+				Size = UDim2.new(1,-8,0,25),
+				Position = UDim2.new(0.5,0,0,-2),
 				ZIndex = 2,
 				Parent = self.page
 			}
@@ -2827,9 +2827,8 @@ function sections:dropdown(props)
 			end
 			dropdown.current = v
 			dropdown.value.Text = v
-			dropdown.value.TextTransparency = 1
-			dropdown.value.TextStrokeTransparency = 1
-			ts:Create(dropdown.value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
+			dropdown.value.TextColor3 = self.library.theme.accent
+			ts:Create(dropdown.value, TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 			ddoptiontitle.TextColor3 = self.library.theme.accent
 			table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
 			dropdown.callback(v)
@@ -3488,9 +3487,8 @@ function sections:multibox(props)
 					end
 				end
 				value.Text = str
-				value.TextTransparency = 1
-				value.TextStrokeTransparency = 1
-				ts:Create(value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
+				value.TextColor3 = self.library.theme.accent
+				ts:Create(value, TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 				ddoptiontitle.TextColor3 = self.library.theme.accent
 				table.insert(self.library.themeitems["accent"]["TextColor3"],ddoptiontitle)
 				multibox.callback(multibox.current)
@@ -3511,9 +3509,8 @@ function sections:multibox(props)
 					end
 				end
 				value.Text = str
-				value.TextTransparency = 1
-				value.TextStrokeTransparency = 1
-				ts:Create(value, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextTransparency = 0, TextStrokeTransparency = 0}):Play()
+				value.TextColor3 = self.library.theme.accent
+				ts:Create(value, TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 				ddoptiontitle.TextColor3 = Color3.fromRGB(255,255,255)
 				multibox.callback(multibox.current)
 			end
@@ -3936,7 +3933,7 @@ function sections:keybind(props)
 			BorderColor3 = Color3.fromRGB(56, 56, 56),
 			BorderMode = "Inset",
 			BorderSizePixel = 1,
-			Size = UDim2.new(0,90,0,48),
+			Size = UDim2.new(0,90,0,54),
 			Position = UDim2.new(1,0,1,4),
 			Visible = false,
 			ZIndex = 7,
@@ -3948,6 +3945,15 @@ function sections:keybind(props)
 		"UIListLayout",
 		{
 			FillDirection = "Vertical",
+			Parent = modeholder
+		}
+	)
+	--
+	utility.new(
+		"UIPadding",
+		{
+			PaddingTop = UDim.new(0,3),
+			PaddingBottom = UDim.new(0,3),
 			Parent = modeholder
 		}
 	)
