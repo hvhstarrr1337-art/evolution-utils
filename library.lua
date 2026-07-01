@@ -449,6 +449,8 @@ function library:new(props)
 		["multiboxes"] = {},
 		["buttonboxs"] = {},
 		["colorpickers"] = {},
+		["whitelist"] = {},
+		["connections"] = {},
 		["x"] = true,
 		["y"] = true,
 		["animation"] = "slide",
@@ -1315,6 +1317,12 @@ function library:unload()
 	--
 	if window.watermarkconnection then
 		window.watermarkconnection:Disconnect()
+	end
+	--
+	if window.connections then
+		for i,v in pairs(window.connections) do
+			pcall(function() v:Disconnect() end)
+		end
 	end
 	--
 	if window.screen then
@@ -5756,5 +5764,442 @@ function sections:configloader(props)
 	-- // metatable indexing + return
 	setmetatable(configloader, configloaders)
 	return configloader 
+end
+--
+function sections:playerlist(props)
+	-- // properties
+	local props = props or {}
+	local name = props.name or props.Name or "Players"
+	local height = props.height or props.Height or props.size or props.Size or 250
+	local callback = props.callback or props.Callback or props.callBack or props.CallBack or function()end
+	-- // variables
+	local playerlist = {}
+	local rows = {}
+	-- // main
+	local plholder = utility.new(
+		"Frame",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,height),
+			Parent = self.content
+		}
+	)
+	--
+	local outline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = plholder
+		}
+	)
+	--
+	local outline2 = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = outline
+		}
+	)
+	--
+	local title = utility.new(
+		"TextLabel",
+		{
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,0,0,15),
+			Position = UDim2.new(0,0,0,3),
+			Font = self.library.font,
+			Text = name:lower(),
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Center",
+			Parent = outline
+		}
+	)
+	--
+	self.library.labels[#self.library.labels+1] = title
+	--
+	local color = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = self.library.theme.accent,
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-6,0,1),
+			Position = UDim2.new(0.5,0,0,19),
+			Parent = outline
+		}
+	)
+	--
+	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	-- // search
+	local searchholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-10,0,20),
+			Position = UDim2.new(0.5,0,0,25),
+			Parent = outline
+		}
+	)
+	--
+	local searchoutline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = searchholder
+		}
+	)
+	--
+	local search = utility.new(
+		"TextBox",
+		{
+			AnchorPoint = Vector2.new(0.5,0.5),
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1,-8,1,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			Font = self.library.font,
+			PlaceholderText = "search..",
+			PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+			Text = "",
+			TextColor3 = Color3.fromRGB(255,255,255),
+			TextSize = self.library.textsize,
+			TextStrokeTransparency = 0,
+			TextXAlignment = "Left",
+			ClearTextOnFocus = false,
+			Parent = searchholder
+		}
+	)
+	--
+	self.library.labels[#self.library.labels+1] = search
+	-- // list
+	local listholder = utility.new(
+		"Frame",
+		{
+			AnchorPoint = Vector2.new(0.5,0),
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(12, 12, 12),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,-10,1,-56),
+			Position = UDim2.new(0.5,0,0,50),
+			Parent = outline
+		}
+	)
+	--
+	local listoutline = utility.new(
+		"Frame",
+		{
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+			BorderColor3 = Color3.fromRGB(56, 56, 56),
+			BorderMode = "Inset",
+			BorderSizePixel = 1,
+			Size = UDim2.new(1,0,1,0),
+			Parent = listholder
+		}
+	)
+	--
+	local scroll = utility.new(
+		"ScrollingFrame",
+		{
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1,0,1,0),
+			ClipsDescendants = true,
+			AutomaticCanvasSize = "Y",
+			CanvasSize = UDim2.new(0,0,0,0),
+			ScrollBarImageTransparency = 0.25,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 5,
+			VerticalScrollBarInset = "ScrollBar",
+			VerticalScrollBarPosition = "Right",
+			Parent = listoutline
+		}
+	)
+	--
+	utility.new(
+		"UIListLayout",
+		{
+			FillDirection = "Vertical",
+			Padding = UDim.new(0,0),
+			Parent = scroll
+		}
+	)
+	-- // playerlist tbl
+	playerlist = {
+		["library"] = self.library,
+		["callback"] = callback,
+		["rows"] = rows
+	}
+	-- // row builder
+	local makerow = function(player)
+		local rowbutton = utility.new(
+			"TextButton",
+			{
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,0,0,18),
+				Text = "",
+				Parent = scroll
+			}
+		)
+		--
+		local grey = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(0.5,0),
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,-4,1,0),
+				Position = UDim2.new(0.5,0,0,0),
+				Parent = rowbutton
+			}
+		)
+		--
+		local rowtitle = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(0,0.5),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1,-72,1,0),
+				Position = UDim2.new(0,8,0.5,0),
+				Font = self.library.font,
+				Text = player.Name,
+				TextColor3 = Color3.fromRGB(255,255,255),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Left",
+				TextTruncate = "AtEnd",
+				Parent = rowbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = rowtitle
+		--
+		local prio = utility.new(
+			"TextLabel",
+			{
+				AnchorPoint = Vector2.new(1,0.5),
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0,40,1,0),
+				Position = UDim2.new(1,-22,0.5,0),
+				Font = self.library.font,
+				Text = "",
+				TextColor3 = Color3.fromRGB(150,150,150),
+				TextSize = self.library.textsize,
+				TextStrokeTransparency = 0,
+				TextXAlignment = "Right",
+				Visible = false,
+				Parent = rowbutton
+			}
+		)
+		--
+		self.library.labels[#self.library.labels+1] = prio
+		--
+		local checkoutline = utility.new(
+			"Frame",
+			{
+				AnchorPoint = Vector2.new(1,0.5),
+				BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+				BorderColor3 = Color3.fromRGB(56, 56, 56),
+				BorderMode = "Inset",
+				BorderSizePixel = 1,
+				Size = UDim2.new(0,10,0,10),
+				Position = UDim2.new(1,-8,0.5,0),
+				Parent = rowbutton
+			}
+		)
+		--
+		local check = utility.new(
+			"Frame",
+			{
+				BackgroundColor3 = self.library.theme.accent,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1,0,1,0),
+				Visible = false,
+				Parent = checkoutline
+			}
+		)
+		--
+		utility.new(
+			"UIGradient",
+			{
+				Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(199, 191, 204)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))},
+				Rotation = 90,
+				Parent = check
+			}
+		)
+		--
+		local row = {
+			["player"] = player,
+			["button"] = rowbutton,
+			["grey"] = grey,
+			["title"] = rowtitle,
+			["prio"] = prio,
+			["check"] = check
+		}
+		-- // draw helper (reflects whitelist state on the row)
+		local function draw()
+			local entry = self.library.whitelist[player.UserId]
+			if entry then
+				check.Visible = true
+				prio.Visible = true
+				prio.Text = entry.priority
+				if not table.find(self.library.themeitems["accent"]["TextColor3"],rowtitle) then
+					rowtitle.TextColor3 = self.library.theme.accent
+					table.insert(self.library.themeitems["accent"]["TextColor3"],rowtitle)
+				end
+				if not table.find(self.library.themeitems["accent"]["BackgroundColor3"],check) then
+					check.BackgroundColor3 = self.library.theme.accent
+					table.insert(self.library.themeitems["accent"]["BackgroundColor3"],check)
+				end
+				if entry.priority == "high" then
+					prio.TextColor3 = self.library.theme.accent
+					if not table.find(self.library.themeitems["accent"]["TextColor3"],prio) then
+						table.insert(self.library.themeitems["accent"]["TextColor3"],prio)
+					end
+				else
+					prio.TextColor3 = Color3.fromRGB(150,150,150)
+					local f = table.find(self.library.themeitems["accent"]["TextColor3"],prio)
+					if f then table.remove(self.library.themeitems["accent"]["TextColor3"],f) end
+				end
+			else
+				check.Visible = false
+				prio.Visible = false
+				rowtitle.TextColor3 = Color3.fromRGB(255,255,255)
+				local f1 = table.find(self.library.themeitems["accent"]["TextColor3"],rowtitle)
+				if f1 then table.remove(self.library.themeitems["accent"]["TextColor3"],f1) end
+				local f2 = table.find(self.library.themeitems["accent"]["BackgroundColor3"],check)
+				if f2 then table.remove(self.library.themeitems["accent"]["BackgroundColor3"],f2) end
+				local f3 = table.find(self.library.themeitems["accent"]["TextColor3"],prio)
+				if f3 then table.remove(self.library.themeitems["accent"]["TextColor3"],f3) end
+			end
+		end
+		--
+		draw()
+		--
+		rowbutton.MouseEnter:Connect(function()
+			ts:Create(grey, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 0.92}):Play()
+		end)
+		--
+		rowbutton.MouseLeave:Connect(function()
+			ts:Create(grey, TweenInfo.new(0.12,Enum.EasingStyle.Quad,Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+		end)
+		-- // left click = toggle whitelist (defaults to low priority)
+		rowbutton.MouseButton1Down:Connect(function()
+			if self.library.whitelist[player.UserId] then
+				self.library.whitelist[player.UserId] = nil
+				draw()
+				callback(player,false,nil)
+			else
+				self.library.whitelist[player.UserId] = {["name"] = player.Name, ["userid"] = player.UserId, ["priority"] = "low"}
+				draw()
+				callback(player,true,"low")
+			end
+		end)
+		-- // right click = cycle priority low <-> high
+		rowbutton.MouseButton2Down:Connect(function()
+			local entry = self.library.whitelist[player.UserId]
+			if not entry then return end
+			entry.priority = (entry.priority == "low") and "high" or "low"
+			draw()
+			callback(player,true,entry.priority)
+		end)
+		--
+		table.insert(rows,row)
+	end
+	-- // refresh
+	local refresh = function()
+		for i,v in pairs(rows) do
+			local find = table.find(self.library.themeitems["accent"]["TextColor3"],v.title)
+			if find then
+				table.remove(self.library.themeitems["accent"]["TextColor3"],find)
+			end
+			local find2 = table.find(self.library.themeitems["accent"]["BackgroundColor3"],v.check)
+			if find2 then
+				table.remove(self.library.themeitems["accent"]["BackgroundColor3"],find2)
+			end
+			local find3 = table.find(self.library.themeitems["accent"]["TextColor3"],v.prio)
+			if find3 then
+				table.remove(self.library.themeitems["accent"]["TextColor3"],find3)
+			end
+			v.button:Destroy()
+		end
+		rows = {}
+		playerlist.rows = rows
+		--
+		local query = utility.removespaces(tostring(search.Text):lower())
+		for i,v in pairs(plrs:GetPlayers()) do
+			if v ~= plr then
+				if query == "" or v.Name:lower():find(query,1,true) or v.DisplayName:lower():find(query,1,true) then
+					makerow(v)
+				end
+			end
+		end
+	end
+	--
+	playerlist.refresh = refresh
+	--
+	refresh()
+	-- // connections
+	table.insert(self.library.connections, plrs.PlayerAdded:Connect(function()
+		refresh()
+	end))
+	table.insert(self.library.connections, plrs.PlayerRemoving:Connect(function()
+		task.wait()
+		refresh()
+	end))
+	--
+	search:GetPropertyChangedSignal("Text"):Connect(function()
+		refresh()
+	end)
+	-- // metatable indexing + return
+	setmetatable(playerlist, configloaders)
+	return playerlist
+end
+--
+function library:iswhitelisted(player)
+	if not player then return false end
+	local id = (typeof(player) == "Instance") and player.UserId or player
+	return self.whitelist[id] ~= nil
+end
+--
+function library:getpriority(player)
+	if not player then return nil end
+	local id = (typeof(player) == "Instance") and player.UserId or player
+	local entry = self.whitelist[id]
+	return entry and entry.priority or nil
+end
+--
+function library:playertab(props)
+	local props = props or {}
+	local name = props.name or props.Name or "Players"
+	local icon = props.icon or props.Icon or props.image or props.Image or nil
+	local callback = props.callback or props.Callback or function()end
+	-- // page
+	local page = self:page({name = name, icon = icon})
+	-- // list
+	local section = page:section({name = "Player List", side = "left", size = 300})
+	section:playerlist({name = "Players", height = 270, callback = callback})
+	--
+	return page
 end
 return library
