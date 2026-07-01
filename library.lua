@@ -223,6 +223,7 @@ function library:new(props)
 			Parent = root
 		}
 	)
+	--
 	-- 2
 	local outline2 = utility.new(
 		"Frame",
@@ -355,6 +356,15 @@ function library:new(props)
 			Parent = tabs
 		}
 	)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(205, 205, 205))},
+			Rotation = 90,
+			Parent = outline4
+		}
+	)
 	-- // tabbar
 	local tabsoutline = utility.new(
 		"Frame",
@@ -456,7 +466,8 @@ function library:new(props)
 			["accent"] = {
 				["BackgroundColor3"] = {},
 				["BorderColor3"] = {},
-				["TextColor3"] = {}
+				["TextColor3"] = {},
+				["ImageColor3"] = {}
 			}
 		}
 	}
@@ -1915,6 +1926,15 @@ function pages:section(props)
 	)
 	--
 	table.insert(self.library.themeitems["accent"]["BackgroundColor3"],color)
+	--
+	utility.new(
+		"UIGradient",
+		{
+			Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(210, 210, 210))},
+			Rotation = 90,
+			Parent = outline
+		}
+	)
 	--
 	local content = utility.new(
 		"Frame",
