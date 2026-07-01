@@ -1218,6 +1218,16 @@ function library:settheme(theme,color)
 			end
 		end
 	end
+	--
+	if theme == "accent" then
+		for i,v in pairs(window.pages) do
+			if v.open then
+				if v.outline then v.outline.BorderColor3 = color end
+				if v.icon then v.icon.ImageColor3 = color end
+				if v.label then v.label.TextColor3 = color end
+			end
+		end
+	end
 end
 --
 function library:setkey(key)
