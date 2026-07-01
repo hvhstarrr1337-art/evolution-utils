@@ -5005,6 +5005,23 @@ function sections:colorpicker(props)
 		colorpicker.open = not colorpicker.open
 	end)
 	--
+	uis.InputBegan:Connect(function(input)
+		if colorpicker.open and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+			if cpholder.Parent == nil then
+				return
+			end
+			local m = uis:GetMouseLocation() - game:GetService("GuiService"):GetGuiInset()
+			local function inside(gui)
+				local p,s = gui.AbsolutePosition,gui.AbsoluteSize
+				return m.X >= p.X and m.X <= p.X+s.X and m.Y >= p.Y and m.Y <= p.Y+s.Y
+			end
+			if not inside(cpholder) and not inside(button) then
+				cpholder.Visible = false
+				colorpicker.open = false
+			end
+		end
+	end)
+	--
 	huebutton.MouseButton1Down:Connect(function()
 		colorpicker.hue = true
 		movehue()
