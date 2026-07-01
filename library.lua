@@ -1954,7 +1954,7 @@ function pages:section(props)
 	)
 	--
 	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		sectionholder.Size = UDim2.new(1,0,0,layout.AbsoluteContentSize.Y + 35)
+		sectionholder.Size = UDim2.new(1,0,0,layout.AbsoluteContentSize.Y + 55)
 	end)
 	-- // section tbl
 	section = {
