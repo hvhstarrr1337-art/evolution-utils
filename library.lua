@@ -1944,7 +1944,7 @@ function pages:section(props)
 		}
 	)
 	--
-	utility.new(
+	local layout = utility.new(
 		"UIListLayout",
 		{
 			FillDirection = "Vertical",
@@ -1952,6 +1952,10 @@ function pages:section(props)
 			Parent = content
 		}
 	)
+	--
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		sectionholder.Size = UDim2.new(1,0,0,layout.AbsoluteContentSize.Y + 25)
+	end)
 	-- // section tbl
 	section = {
 		["library"] = self.library,
