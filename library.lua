@@ -1912,10 +1912,10 @@ function library:page(props)
 			Position = UDim2.new(0,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 1,
-			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
-			ScrollBarThickness = 0,
-			ClipsDescendants = false,
+			ScrollBarImageTransparency = 0.35,
+			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
+			ScrollBarThickness = 3,
+			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
 			Parent = pageholder
@@ -1941,10 +1941,10 @@ function library:page(props)
 			Position = UDim2.new(1,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 1,
-			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
-			ScrollBarThickness = 0,
-			ClipsDescendants = false,
+			ScrollBarImageTransparency = 0.35,
+			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
+			ScrollBarThickness = 3,
+			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
 			Parent = pageholder
@@ -2164,10 +2164,10 @@ function pages:subtab(props)
 			Position = UDim2.new(0,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 1,
-			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
-			ScrollBarThickness = 0,
-			ClipsDescendants = false,
+			ScrollBarImageTransparency = 0.35,
+			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
+			ScrollBarThickness = 3,
+			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
 			Parent = content
@@ -2193,10 +2193,10 @@ function pages:subtab(props)
 			Position = UDim2.new(1,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 1,
-			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
-			ScrollBarThickness = 0,
-			ClipsDescendants = false,
+			ScrollBarImageTransparency = 0.35,
+			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
+			ScrollBarThickness = 3,
+			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
 			Parent = content
@@ -3567,7 +3567,7 @@ function sections:dropdown(props)
 				TextSize = self.library.textsize,
 				TextStrokeTransparency = 0,
 				TextXAlignment = "Left",
-				ClipsDescendants = true,
+			ClipsDescendants = true,
 				ZIndex = 6,
 				Parent = ddoptionbutton
 			}
@@ -3880,7 +3880,7 @@ function sections:buttonbox(props)
 				TextSize = self.library.textsize,
 				TextStrokeTransparency = 0,
 				TextXAlignment = "Left",
-				ClipsDescendants = true,
+			ClipsDescendants = true,
 				ZIndex = 6,
 				Parent = bboptionbutton
 			}
@@ -4223,7 +4223,7 @@ function sections:multibox(props)
 				TextSize = self.library.textsize,
 				TextStrokeTransparency = 0,
 				TextXAlignment = "Left",
-				ClipsDescendants = true,
+			ClipsDescendants = true,
 				ZIndex = 6,
 				Parent = ddoptionbutton
 			}
