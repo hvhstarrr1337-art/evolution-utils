@@ -697,12 +697,30 @@ function library:new(props)
 	local wmuser = wmsegment(plr.Name)
 	--
 	coroutine.wrap(function()
-		local ok,info = pcall(function()
-			return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+		local placename
+		-- // web api (not hookable in-game, most reliable)
+		pcall(function()
+			local http = game:GetService("HttpService")
+			local uid = http:JSONDecode(game:HttpGet("https://apis.roblox.com/universes/v1/places/"..game.PlaceId.."/universe")).universeId
+			local data = http:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games?universeIds="..uid))
+			if data and data.data and data.data[1] and data.data[1].name then
+				placename = data.data[1].name
+			end
 		end)
-		if ok and info and info.Name then
-			wmplace.Text = info.Name
+		-- // marketplace fallback
+		if not placename then
+			pcall(function()
+				local info = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+				if info and typeof(info) == "table" and info.Name then
+					placename = info.Name
+				end
+			end)
 		end
+		-- // final fallback
+		if not placename or placename == "" then
+			placename = "Place "..tostring(game.PlaceId)
+		end
+		wmplace.Text = placename
 	end)()
 	--
 	local frames = 0
@@ -1894,10 +1912,10 @@ function library:page(props)
 	local pageholder = utility.new(
 		"Frame",
 		{
-			AnchorPoint = Vector2.new(0.5,0.5),
+			AnchorPoint = Vector2.new(0.5,0),
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1,-20,1,-20),
-			Position = UDim2.new(0.5,0,0.5,0),
+			Size = UDim2.new(1,-20,1,-12),
+			Position = UDim2.new(0.5,0,0,10),
 			Visible = false,
 			Parent = self.tabs
 		}
@@ -1912,9 +1930,9 @@ function library:page(props)
 			Position = UDim2.new(0,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 0.35,
-			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
-			ScrollBarThickness = 3,
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
 			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
@@ -1941,9 +1959,9 @@ function library:page(props)
 			Position = UDim2.new(1,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 0.35,
-			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
-			ScrollBarThickness = 3,
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
 			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
@@ -2164,9 +2182,9 @@ function pages:subtab(props)
 			Position = UDim2.new(0,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 0.35,
-			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
-			ScrollBarThickness = 3,
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
 			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
@@ -2193,9 +2211,9 @@ function pages:subtab(props)
 			Position = UDim2.new(1,0,0,0),
 			AutomaticCanvasSize = "Y",
 			CanvasSize = UDim2.new(0,0,0,0),
-			ScrollBarImageTransparency = 0.35,
-			ScrollBarImageColor3 = Color3.fromRGB(120,120,120),
-			ScrollBarThickness = 3,
+			ScrollBarImageTransparency = 1,
+			ScrollBarImageColor3 = Color3.fromRGB(0,0,0),
+			ScrollBarThickness = 0,
 			ClipsDescendants = true,
 			VerticalScrollBarInset = "None",
 			VerticalScrollBarPosition = "Right",
