@@ -82,6 +82,14 @@ colorpickers.__index = colorpickers
 configloaders.__index = configloaders
 watermarks.__index = watermarks
 loaders.__index = loaders
+-- // shared visible method
+for i,meta in pairs({toggles,buttons,sliders,dropdowns,multiboxs,buttonboxs,textboxs,keybinds,colorpickers}) do
+	meta.setvisible = function(self,bool)
+		if self.holder then
+			self.holder.Visible = bool
+		end
+	end
+end
 -- // functions
 utility.new = function(instance,properties) 
 	-- // instance
@@ -575,7 +583,7 @@ function library:new(props)
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			AutomaticSize = "X",
-			Size = UDim2.new(0,0,0,26),
+			Size = UDim2.new(0,0,0,28),
 			Position = UDim2.new(0,10,0,10),
 			ZIndex = 9900,
 			Parent = screen
@@ -602,7 +610,7 @@ function library:new(props)
 				BorderColor3 = Color3.fromRGB(12, 12, 12),
 				BorderSizePixel = 1,
 				Active = true,
-				Size = UDim2.new(0,80,0,26),
+				Size = UDim2.new(0,80,0,28),
 				ZIndex = 9900,
 				Parent = wmholder
 			}
@@ -669,9 +677,9 @@ function library:new(props)
 		)
 		--
 		label:GetPropertyChangedSignal("TextBounds"):Connect(function()
-			box.Size = UDim2.new(0,math.max(label.TextBounds.X+28,72),0,26)
+			box.Size = UDim2.new(0,math.max(label.TextBounds.X+28,72),0,28)
 		end)
-		box.Size = UDim2.new(0,math.max(label.TextBounds.X+28,72),0,26)
+		box.Size = UDim2.new(0,math.max(label.TextBounds.X+28,72),0,28)
 		--
 		utility.dragify(indent,wmholder)
 		utility.dragify(box,wmholder)
@@ -2850,6 +2858,8 @@ function sections:toggle(props)
 	self.library.labels[#self.library.labels+1] = title
 	-- // metatable indexing + return
 	setmetatable(toggle, toggles)
+	toggle.holder = toggleholder
+	if props.visible == false or props.Visible == false then toggleholder.Visible = false end
 	return toggle
 end
 --
@@ -2983,6 +2993,8 @@ function sections:button(props)
 	self.library.labels[#self.library.labels+1] = buttonpress
 	-- // metatable indexing + return
 	setmetatable(button, buttons)
+	button.holder = buttonholder
+	if props.visible == false or props.Visible == false then buttonholder.Visible = false end
 	return button
 end
 --
@@ -3224,6 +3236,8 @@ function sections:slider(props)
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
 	setmetatable(slider, sliders)
+	slider.holder = sliderholder
+	if props.visible == false or props.Visible == false then sliderholder.Visible = false end
 	return slider
 end
 --
@@ -3623,6 +3637,8 @@ function sections:dropdown(props)
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
 	setmetatable(dropdown, dropdowns)
+	dropdown.holder = dropdownholder
+	if props.visible == false or props.Visible == false then dropdownholder.Visible = false end
 	return dropdown
 end
 --
@@ -3914,6 +3930,8 @@ function sections:buttonbox(props)
 	self.library.labels[#self.library.labels+1] = title
 	-- // metatable indexing + return
 	setmetatable(buttonbox, buttonboxs)
+	buttonbox.holder = buttonboxholder
+	if props.visible == false or props.Visible == false then buttonboxholder.Visible = false end
 	return buttonbox
 end
 --
@@ -4303,6 +4321,8 @@ function sections:multibox(props)
 	self.library.labels[#self.library.labels+1] = title
 	-- // metatable indexing + return
 	setmetatable(multibox, multiboxs)
+	multibox.holder = multiboxholder
+	if props.visible == false or props.Visible == false then multiboxholder.Visible = false end
 	return multibox
 end
 --
@@ -4507,6 +4527,8 @@ function sections:textbox(props)
 	self.library.labels[#self.library.labels+1] = tbox
 	-- // metatable indexing + return
 	setmetatable(textbox, textboxs)
+	textbox.holder = textboxholder
+	if props.visible == false or props.Visible == false then textboxholder.Visible = false end
 	return textbox
 end
 --
@@ -4884,6 +4906,8 @@ function sections:keybind(props)
 	self.library.labels[#self.library.labels+1] = value
 	-- // metatable indexing + return
 	setmetatable(keybind, keybinds)
+	keybind.holder = keybindholder
+	if props.visible == false or props.Visible == false then keybindholder.Visible = false end
 	return keybind
 end
 --
@@ -5783,6 +5807,8 @@ function sections:colorpicker(props)
 	self.library.labels[#self.library.labels+1] = cptitle
 	-- // metatable indexing + return
 	setmetatable(colorpicker, colorpickers)
+	colorpicker.holder = colorpickerholder
+	if props.visible == false or props.Visible == false then colorpickerholder.Visible = false end
 	return colorpicker
 end
 --
